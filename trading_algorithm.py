@@ -3,10 +3,7 @@ import pandas as pd
 import numpy as np
 import backtrader as bt
 
-# Step 1: Fetch S&P 500 stock list and data
-sp500_tickers = pd.read_csv("https://datahub.io/core/s-and-p-500-companies/r/0.csv")['Symbol'].tolist()
-
-# Step 2: Download historical data for each stock and handle missing data
+# Function to download Apple stock data
 def get_data(ticker):
     try:
         data = yf.download(ticker, start="2022-01-01", end="2022-12-31")
@@ -16,7 +13,6 @@ def get_data(ticker):
     except Exception as e:
         print(f"Error downloading {ticker}: {e}")
         return None  # Return None if there's an issue
-
 
 # Function to add custom indicators (SMA, RSI, Bollinger Bands)
 def add_indicators(data):
@@ -56,8 +52,8 @@ def calculate_bollinger_bands(data, window=20, num_of_std=2):
 # Create custom strategy
 class MovingAverageRSIBollingerStrategy(bt.Strategy):
     params = (
-        ('short_ma_period', 50),
-        ('long_ma_period', 200),
+        ('short_ma_period', 20),
+        ('long_ma_period', 50),
         ('rsi_period', 14),
         ('rsi_overbought', 70),
         ('rsi_oversold', 30),
@@ -71,30 +67,25 @@ class MovingAverageRSIBollingerStrategy(bt.Strategy):
 
     def next(self):
         # Buy Signal
-        if self.ma50 > self.ma200 and self.rsi < self.params.rsi_oversold and self.data.close < self.bollinger.lines.bot:
+        if self.ma50 > self.ma200 or self.rsi < self.params.rsi_oversold or self.data.close < self.bollinger.lines.bot:
             self.buy()
-
-        # Sell Signal
-        if self.ma50 < self.ma200 and self.rsi > self.params.rsi_overbought and self.data.close > self.bollinger.lines.top:
-            self.sell()
+        if self.position:
+        # Sell Signal: Only execute if we own shares
+            if self.ma50 < self.ma200 and self.rsi > self.params.rsi_overbought and self.data.close > self.bollinger.lines.top:
+                self.sell()
 
 # Backtesting setup
 if __name__ == '__main__':
     # Initialize Cerebro (backtrader engine)
     cerebro = bt.Cerebro()
     cerebro.broker.set_cash(30000)  # Starting capital
-    # Filter out problematic tickers
-    sp500_tickers = [ticker for ticker in sp500_tickers if ticker not in ['BRK.B', 'BF.B', 'AMTM']]
-
-    # Iterate through S&P 500 stocks and add data to Cerebro
-    for ticker in sp500_tickers:
-        try:
-            data = get_data(ticker)
-            if not data.empty:
-                data = bt.feeds.PandasData(dataname=add_indicators(data))
-                cerebro.adddata(data, name=ticker)
-        except:
-            continue  # In case of any errors fetching stock data
+    
+    # Download Apple data and add to Cerebro
+    ticker = 'AAPL'
+    data = get_data(ticker)
+    if data is not None:
+        data = bt.feeds.PandasData(dataname=add_indicators(data))
+        cerebro.adddata(data, name=ticker)
     
     # Add strategy
     cerebro.addstrategy(MovingAverageRSIBollingerStrategy)
