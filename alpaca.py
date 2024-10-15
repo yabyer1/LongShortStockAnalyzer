@@ -2,7 +2,7 @@ import alpaca_trade_api as tradeapi
 import backtrader as bt
 import pandas as pd
 from datetime import datetime
-
+import requests
 # Alpaca credentials
 API_KEY = 'PKDY7NQ18NBZ59EDXB3C'
 SECRET_KEY = 'bD0DFINEX1m0y6GRFhAhIi8x8iBzX6M8IIL0QEOq'
@@ -40,12 +40,37 @@ class AlpacaStrategy(bt.Strategy):
         # Buy Signal
         if self.ma50 > self.ma200 or self.rsi < self.params.rsi_oversold or self.data.close < self.bollinger.lines.bot:
             self.buy()
+            sendBuySignal()
         if self.position:
         # Sell Signal: Only execute if we own shares
             if self.ma50 < self.ma200 and self.rsi > self.params.rsi_overbought and self.data.close > self.bollinger.lines.top:
                 self.sell()
+                sendSellSignal()
 
 # Run the backtrader engine with Alpaca
+def sendBuySignal():
+    url = 'http://your-django-backend.com/api/trade/'
+    data = {
+        'symbol': 'AAPL',
+        'action': 'buy',
+        
+      
+    }
+
+    response = requests.post(url, json=data)
+
+
+def sendSellSignal():
+    url = 'http://your-django-backend.com/api/trade/'
+    data = {
+        'symbol': 'AAPL',
+        'action': 'sell',
+        
+        
+    }
+
+    response = requests.post(url, json=data)
+
 if __name__ == '__main__':
     cerebro = bt.Cerebro()
 

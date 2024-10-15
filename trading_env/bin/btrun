@@ -1,4 +1,4 @@
-#!/Users/ganapathynagasubramaniam/Desktop/PPO_Bot/trading_env/bin/python3
+#!/Users/ganapathynagasubramaniam/Desktop/PPO_Bot/SuggestionStock/trading_env/bin/python3.11
 # -*- coding: utf-8 -*-
 import re
 import sys
